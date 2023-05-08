@@ -2,8 +2,17 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "QueryMsg",
   "description": "Queries",
-  "type": "string",
-  "enum": [
-    "notused"
+  "anyOf": [
+    {
+      "type": "object",
+      "required": [
+        "read"
+      ],
+      "properties": {
+        "read": {
+          "type": "object"
+        }
+      }
+    }
   ]
 }

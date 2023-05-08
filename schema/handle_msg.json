@@ -2,8 +2,17 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "HandleMsg",
   "description": "Handle messages",
-  "type": "string",
-  "enum": [
-    "notused"
+  "anyOf": [
+    {
+      "type": "object",
+      "required": [
+        "remove"
+      ],
+      "properties": {
+        "remove": {
+          "type": "object"
+        }
+      }
+    }
   ]
 }

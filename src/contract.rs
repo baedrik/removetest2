@@ -1,10 +1,10 @@
 use cosmwasm_std::{
-    Api, Env, Extern, HandleResponse, HandleResult, InitResponse, InitResult, Querier,
-    QueryResponse, QueryResult, ReadonlyStorage, StdError, Storage,
+    log, to_binary, Api, Env, Extern, HandleResponse, HandleResult, InitResponse, InitResult,
+    Querier, QueryResult, ReadonlyStorage, StdError, Storage,
 };
-use cosmwasm_storage::PrefixedStorage;
+use cosmwasm_storage::{PrefixedStorage, ReadonlyPrefixedStorage};
 
-use crate::msg::{HandleMsg, InitMsg, QueryMsg};
+use crate::msg::{HandleMsg, InitMsg, QueryMsg, ReadResponse};
 use crate::state::{PREFIX_TEST, TEST_KEY};
 
 pub const BLOCK_SIZE: usize = 256;
@@ -40,12 +40,6 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
     } else {
         return Err(StdError::generic_err("Could not retrieve from storage"));
     }
-    // remove it from storage
-    store.remove(TEST_KEY);
-    // test if it was removed
-    if store.get(TEST_KEY).is_some() {
-        return Err(StdError::generic_err("This key should have been removed!"));
-    }
 
     Ok(InitResponse::default())
 }
@@ -59,11 +53,19 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
 /// * `env` - Env of contract's environment
 /// * `msg` - HandleMsg passed in with the execute message
 pub fn handle<S: Storage, A: Api, Q: Querier>(
-    _deps: &mut Extern<S, A, Q>,
+    deps: &mut Extern<S, A, Q>,
     _env: Env,
     _msg: HandleMsg,
 ) -> HandleResult {
-    Ok(HandleResponse::default())
+    let mut store = PrefixedStorage::new(PREFIX_TEST, &mut deps.storage);
+    // remove it from storage
+    store.remove(TEST_KEY);
+
+    Ok(HandleResponse {
+        messages: vec![],
+        log: vec![log("status", "success")],
+        data: None,
+    })
 }
 
 /////////////////////////////////////// Query /////////////////////////////////////
@@ -74,8 +76,16 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
 /// * `deps` - reference to Extern containing all the contract's external dependencies
 /// * `msg` - QueryMsg passed in with the query call
 pub fn query<S: Storage, A: Api, Q: Querier>(
-    _deps: &Extern<S, A, Q>,
+    deps: &Extern<S, A, Q>,
     _msg: QueryMsg,
 ) -> QueryResult {
-    Ok(QueryResponse::default())
+    let store = ReadonlyPrefixedStorage::new(PREFIX_TEST, &deps.storage);
+
+    if let Some(raw) = store.get(TEST_KEY) {
+        let val: bool = bincode2::deserialize(&raw)
+            .map_err(|_| StdError::generic_err("deserialization error"))?;
+        to_binary(&ReadResponse { val })
+    } else {
+        Err(StdError::generic_err("This key has been removed"))
+    }
 }

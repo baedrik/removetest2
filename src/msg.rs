@@ -11,12 +11,17 @@ pub struct InitMsg {
 #[derive(Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum HandleMsg {
-    Notused,
+    Remove {},
 }
 
 /// Queries
 #[derive(Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
-    Notused,
+    Read {},
+}
+
+#[derive(Serialize, Deserialize, JsonSchema)]
+pub struct ReadResponse {
+    pub val: bool,
 }
